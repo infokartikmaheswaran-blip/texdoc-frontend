@@ -28,7 +28,12 @@ const COST_COLORS = {
 // Production: same origin behind reverse proxy
 // Manual:     set window.__TEXDOC_API_BASE = "https://your-api.onrender.com"
 function getApiBase() {
-  return window.__TEXDOC_API_BASE || "https://texdoc-api.onrender.com";
+  if (typeof window !== "undefined" && window.__TEXDOC_API_BASE) return window.__TEXDOC_API_BASE;
+  if (typeof window !== "undefined") {
+    const p = window.location?.port;
+    if (p === "5173" || p === "5174" || p === "3001") return "http://localhost:3000";
+  }
+  return "";
 }
 
 // ─── Animated Number ─────────────────────────────────────────────────────────
@@ -233,6 +238,19 @@ export default function TextileCostingDashboard() {
     overheadsLakhsTFO: 10, interestLakhsTFO: 40, depreciationLakhsTFO: 25,
     avgLabourWagesPerDay: 300, avgStaffSalaryPerMonth: 30000, totalStaff: 17,
     workingDaysPerYear: 362,
+    // Labour workloads — Kg per 8hrs per operative
+    wl_mixing: 1320, wl_contamination: 200,
+    wl_blowRoomFront: 3650, wl_blowRoomBack: 3650, wl_balePlucker: 4000,
+    wl_carding: 1200, wl_simplexDoffer: 2040,
+    wl_spinningBobbinChanger: 680,
+    wl_windingDoffer: 500, wl_windingYCP: 3000, wl_windingPacking: 500,
+    // Labour workloads — Machines per operative
+    wl_preComberDrg: 6, wl_lapFormer: 2, wl_comber: 6, wl_drawing: 6,
+    wl_simplexSider: 4,
+    wl_spinningSider: 1864, wl_spinningDoffer: 5000, wl_spinningRelieverPct: 18,
+    wl_windingSider: 30,
+    // Other labour
+    wl_tfoLabour: 13, wl_ringDoublingLabour: 6,
   });
 
   const [results, setResults] = useState(null);
@@ -316,6 +334,22 @@ export default function TextileCostingDashboard() {
       p.lycraContentPct = Number(inputs.lycraContentPct);
     }
     p.masterOverrides = { ...master };
+    // Map wl_ prefixed fields into nested labourWorkloads for the backend
+    p.masterOverrides.labourWorkloads = {
+      mixing: Number(master.wl_mixing), contamination: Number(master.wl_contamination),
+      blowRoomFront: Number(master.wl_blowRoomFront), blowRoomBack: Number(master.wl_blowRoomBack),
+      balePlucker: Number(master.wl_balePlucker), carding: Number(master.wl_carding),
+      preComberDrg: Number(master.wl_preComberDrg), lapFormer: Number(master.wl_lapFormer),
+      comber: Number(master.wl_comber), drawing: Number(master.wl_drawing),
+      simplexSider: Number(master.wl_simplexSider), simplexDoffer: Number(master.wl_simplexDoffer),
+      spinningSider: Number(master.wl_spinningSider), spinningDoffer: Number(master.wl_spinningDoffer),
+      spinningRelieverPct: Number(master.wl_spinningRelieverPct),
+      spinningBobbinChanger: Number(master.wl_spinningBobbinChanger),
+      windingSider: Number(master.wl_windingSider), windingDoffer: Number(master.wl_windingDoffer),
+      windingYCP: Number(master.wl_windingYCP), windingPacking: Number(master.wl_windingPacking),
+    };
+    p.masterOverrides.tfoLabourPerShift = Number(master.wl_tfoLabour);
+    p.masterOverrides.ringDoublingLabourPerShift = Number(master.wl_ringDoublingLabour);
     return p;
   };
 
@@ -389,13 +423,12 @@ export default function TextileCostingDashboard() {
               </div>
               <div>
                 <div className="text-sm font-bold tracking-wide" style={{ color: "#1E293B", letterSpacing: "0.04em" }}>TEXDOC</div>
-                <div className="text-xs" style={{ color: "#94A3B8" }}>Yarn Costing Engine</div>
+                <div className="text-xs" style={{ color: "#94A3B8" }}>An Ecolink Product</div>
               </div>
             </div>
-            <div className="hidden sm:flex items-center gap-3">
-              <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>KM Associates</span>
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ backgroundColor: "#F1F5F9", color: "#64748B" }}>KM</div>
-            </div>
+            <a href="https://www.kmassociates.online" className="flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors hover:bg-slate-50" style={{ textDecoration: "none" }}>
+              <span className="text-xs font-medium" style={{ color: "#64748B" }}>← Back to website</span>
+            </a>
           </div>
         </header>
 
@@ -470,6 +503,25 @@ export default function TextileCostingDashboard() {
                 <p className="text-xs font-semibold uppercase tracking-wider pt-3 pb-0.5" style={{ color: "#94A3B8", letterSpacing: "0.06em" }}>Labour & Staff</p>
                 <div className="flex gap-3"><Field label="Avg Wages/Day" name="avgLabourWagesPerDay" value={master.avgLabourWagesPerDay} onChange={handleMasterChange} suffix="₹" half /><Field label="Staff Salary/Mo" name="avgStaffSalaryPerMonth" value={master.avgStaffSalaryPerMonth} onChange={handleMasterChange} suffix="₹" half /></div>
                 <Field label="Total Staff Count" name="totalStaff" value={master.totalStaff} onChange={handleMasterChange} />
+
+                <p className="text-xs font-semibold uppercase tracking-wider pt-3 pb-0.5" style={{ color: "#D97706", letterSpacing: "0.06em" }}>Workload — Kg per 8hrs per Operative</p>
+                <p className="text-xs mb-1" style={{ color: "#94A3B8" }}>Higher value = fewer workers needed = lower labour cost</p>
+                <div className="flex gap-3"><Field label="Mixing" name="wl_mixing" value={master.wl_mixing} onChange={handleMasterChange} suffix="Kg" half /><Field label="Contamination" name="wl_contamination" value={master.wl_contamination} onChange={handleMasterChange} suffix="Kg" half /></div>
+                <div className="flex gap-3"><Field label="Blow Room Front" name="wl_blowRoomFront" value={master.wl_blowRoomFront} onChange={handleMasterChange} suffix="Kg" half /><Field label="Blow Room Back" name="wl_blowRoomBack" value={master.wl_blowRoomBack} onChange={handleMasterChange} suffix="Kg" half /></div>
+                <div className="flex gap-3"><Field label="Bale Plucker" name="wl_balePlucker" value={master.wl_balePlucker} onChange={handleMasterChange} suffix="Kg" half /><Field label="Carding" name="wl_carding" value={master.wl_carding} onChange={handleMasterChange} suffix="Kg" half /></div>
+                <div className="flex gap-3"><Field label="Simplex Doffer" name="wl_simplexDoffer" value={master.wl_simplexDoffer} onChange={handleMasterChange} suffix="Kg" half /><Field label="Bobbin Changer" name="wl_spinningBobbinChanger" value={master.wl_spinningBobbinChanger} onChange={handleMasterChange} suffix="Kg" half /></div>
+                <div className="flex gap-3"><Field label="Winding Doffer" name="wl_windingDoffer" value={master.wl_windingDoffer} onChange={handleMasterChange} suffix="Kg" half /><Field label="Winding YCP" name="wl_windingYCP" value={master.wl_windingYCP} onChange={handleMasterChange} suffix="Kg" half /></div>
+                <Field label="Winding Packing" name="wl_windingPacking" value={master.wl_windingPacking} onChange={handleMasterChange} suffix="Kg" />
+
+                <p className="text-xs font-semibold uppercase tracking-wider pt-3 pb-0.5" style={{ color: "#D97706", letterSpacing: "0.06em" }}>Workload — Machines/Spindles per Operative</p>
+                <div className="flex gap-3"><Field label="Pre-comber Drg" name="wl_preComberDrg" value={master.wl_preComberDrg} onChange={handleMasterChange} suffix="m/c" half /><Field label="Lap Former" name="wl_lapFormer" value={master.wl_lapFormer} onChange={handleMasterChange} suffix="m/c" half /></div>
+                <div className="flex gap-3"><Field label="Comber" name="wl_comber" value={master.wl_comber} onChange={handleMasterChange} suffix="m/c" half /><Field label="Drawing" name="wl_drawing" value={master.wl_drawing} onChange={handleMasterChange} suffix="m/c" half /></div>
+                <div className="flex gap-3"><Field label="Simplex Sider" name="wl_simplexSider" value={master.wl_simplexSider} onChange={handleMasterChange} suffix="m/c" half /><Field label="Winding Sider" name="wl_windingSider" value={master.wl_windingSider} onChange={handleMasterChange} suffix="drums" half /></div>
+                <div className="flex gap-3"><Field label="Spinning Sider" name="wl_spinningSider" value={master.wl_spinningSider} onChange={handleMasterChange} suffix="spls" half /><Field label="Spinning Doffer" name="wl_spinningDoffer" value={master.wl_spinningDoffer} onChange={handleMasterChange} suffix="spls" half /></div>
+                <Field label="Spinning Reliever %" name="wl_spinningRelieverPct" value={master.wl_spinningRelieverPct} onChange={handleMasterChange} suffix="%" helpText="% of siders used as relievers" />
+
+                <p className="text-xs font-semibold uppercase tracking-wider pt-3 pb-0.5" style={{ color: "#D97706", letterSpacing: "0.06em" }}>TFO / Doubling Labour</p>
+                <div className="flex gap-3"><Field label="TFO Labour/Shift" name="wl_tfoLabour" value={master.wl_tfoLabour} onChange={handleMasterChange} half helpText="Incl. rewinding" /><Field label="Ring Dbl Labour/Shift" name="wl_ringDoublingLabour" value={master.wl_ringDoublingLabour} onChange={handleMasterChange} half helpText="Incl. rewinding" /></div>
               </InputSection>
 
               {/* Error above button for immediate visibility */}
@@ -641,7 +693,7 @@ export default function TextileCostingDashboard() {
               )}
 
               <div className="text-center pt-2 pb-4">
-                <p className="text-xs" style={{ color: "#94A3B8" }}>TEXDOC Yarn Costing Engine v1.0 · Confidential · KM Associates</p>
+                <p className="text-xs" style={{ color: "#94A3B8" }}>TEXDOC · An Ecolink Product · Yarn Costing Engine v1.0</p>
               </div>
             </div>
           </div>
