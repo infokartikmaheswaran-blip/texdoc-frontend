@@ -220,7 +220,8 @@ export default function TextileCostingDashboard() {
     yarnType: 1, countNe: 40, cottonPricePerCandy: 75000, yarnRealisationPct: 70,
     wasteValue: 20, spinningUtilisation: 98, electricityCostPerUnit: 8, packingCostPerKg: 8,
     spindleSpeedRPM: 16500, yarnTM: 4.2, sellingPricePerKg: 380,
-    isCompact: true, isBlend: false, isBlend1Cotton: true,
+    isCompact: true, isCombed: true, contaminationPicking: true,
+    isBlend: false, isBlend1Cotton: true,
     blend1Pct: 0.35, blend2CostPerKg: 112, blend2WastePct: 0.05,
     blend1CostPerKg: 195, blend1WastePct: 0.08,
     numberOfPly: 2, pliedYarnTPI: 37, tfoSpindleSpeed: 10000,
@@ -307,6 +308,7 @@ export default function TextileCostingDashboard() {
       packingCostPerKg: Number(inputs.packingCostPerKg),
       spindleSpeedRPM: Number(inputs.spindleSpeedRPM),
       yarnTM: Number(inputs.yarnTM), isCompact: inputs.isCompact, isBlend: inputs.isBlend,
+      isCombed: inputs.isCombed, contaminationPicking: inputs.contaminationPicking,
     };
     if (inputs.sellingPricePerKg !== "" && !isNaN(Number(inputs.sellingPricePerKg)))
       p.sellingPricePerKg = Number(inputs.sellingPricePerKg);
@@ -448,6 +450,7 @@ export default function TextileCostingDashboard() {
                 <div className="flex gap-3"><Field label="Count (Ne)" name="countNe" value={inputs.countNe} onChange={handleChange} half placeholder="40" /><Field label="Yarn TM" name="yarnTM" value={inputs.yarnTM} onChange={handleChange} half placeholder="4.2" /></div>
                 <div className="flex gap-3"><Field label="Spindle Speed" name="spindleSpeedRPM" value={inputs.spindleSpeedRPM} onChange={handleChange} suffix="RPM" half /><Field label="Utilisation" name="spinningUtilisation" value={inputs.spinningUtilisation} onChange={handleChange} suffix="%" half /></div>
                 <div className="flex gap-4"><ToggleField label="Compact Spinning" name="isCompact" checked={inputs.isCompact} onChange={handleChange} /><ToggleField label="Fibre Blend" name="isBlend" checked={inputs.isBlend} onChange={handleChange} /></div>
+                <div className="flex gap-4"><ToggleField label="Combed" name="isCombed" checked={inputs.isCombed} onChange={handleChange} /><ToggleField label="Contamination Picking" name="contaminationPicking" checked={inputs.contaminationPicking} onChange={handleChange} /></div>
               </InputSection>
 
               {inputs.isBlend && (
